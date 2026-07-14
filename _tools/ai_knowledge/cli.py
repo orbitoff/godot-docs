@@ -4,11 +4,20 @@ from __future__ import annotations
 
 import argparse
 import json
+import sys
 from pathlib import Path
 
 from .index import generate
 from .query import KnowledgeIndex
+from .retrieve import DEFAULT_MAX_CHARS, KnowledgeRetriever
 from .validate import validate
+
+
+def _positive_int(value: str) -> int:
+    parsed = int(value)
+    if parsed <= 0:
+        raise argparse.ArgumentTypeError("value must be greater than zero")
+    return parsed
 
 
 def build_parser() -> argparse.ArgumentParser:
@@ -36,6 +45,31 @@ def build_parser() -> argparse.ArgumentParser:
     query_parser.add_argument("--snapshot", help="require an exact snapshot ID")
     query_parser.add_argument("--json", action="store_true", help="emit JSON (default)")
 
+    retrieve_parser = subparsers.add_parser(
+        "retrieve",
+        help="resolve knowledge IDs into prompt-ready context",
+    )
+    retrieve_parser.add_argument("ids", nargs="+", help="topic, entity, member, or chunk IDs")
+    retrieve_parser.add_argument("--index", type=Path, default=Path("ai_knowledge"), help="artifact directory")
+    retrieve_parser.add_argument(
+        "--format",
+        choices=("prompt", "json"),
+        default="prompt",
+        help="output format (default: prompt)",
+    )
+    retrieve_parser.add_argument(
+        "--max-chars",
+        type=_positive_int,
+        default=DEFAULT_MAX_CHARS,
+        help=f"maximum context characters (default: {DEFAULT_MAX_CHARS})",
+    )
+    retrieve_parser.add_argument("--snapshot", help="require an exact snapshot ID")
+    retrieve_parser.add_argument(
+        "--allow-missing",
+        action="store_true",
+        help="return partial context while preserving retrieval errors",
+    )
+
     return parser
 
 
@@ -59,6 +93,30 @@ def main(argv: list[str] | None = None) -> int:
         result = KnowledgeIndex(args.index, expected_snapshot=args.snapshot).search(args.text, args.limit)
         print(json.dumps(result, ensure_ascii=False, indent=2, sort_keys=True))
         return 0
+    if args.command == "retrieve":
+        try:
+            result = KnowledgeRetriever(args.index, expected_snapshot=args.snapshot).retrieve(
+                args.ids,
+                max_chars=args.max_chars,
+                allow_missing=args.allow_missing,
+            )
+        except ValueError as error:
+            print(str(error), file=sys.stderr)
+            return 2
+
+        try:
+            if args.format == "json":
+                print(result.to_json())
+            elif result.status != "error":
+                print(result.to_prompt(), end="")
+            else:
+                for error in result.errors:
+                    print(error.message, file=sys.stderr)
+        except ValueError as error:
+            print(str(error), file=sys.stderr)
+            return 2
+
+        return 0 if result.status in {"ok", "truncated"} else 1
     return 2
 
 

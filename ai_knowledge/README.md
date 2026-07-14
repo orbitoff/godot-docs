@@ -45,3 +45,49 @@ Generated summaries are bounded and source-derived. They can omit important
 caveats; consumers must use the linked chunks or source pages when a question
 requires detail. Records from different documentation snapshots must not be
 mixed silently.
+
+## Retrieving prompt context
+
+Use `query` to discover stable IDs, then use `retrieve` to assemble bounded
+context for an AI prompt. Retrieval accepts exact `topic:`, `entity:`,
+`member:`, and `chunk:` IDs; source paths are citations and are not read as
+arbitrary input.
+
+```text
+py -3 -m _tools.ai_knowledge retrieve `
+  topic:tutorials/physics/physics_introduction `
+  entity:CharacterBody2D `
+  member:CharacterBody2D:method:move_and_slide `
+  --index ai_knowledge `
+  --format prompt `
+  --max-chars 32000
+```
+
+The default `prompt` format writes Markdown to stdout with the snapshot ID,
+record delimiters, source paths, source hashes, headings, and source-aligned
+content. Redirect stdout when another tool expects a file:
+
+```text
+py -3 -m _tools.ai_knowledge retrieve entity:CharacterBody2D `
+  --format prompt > godot_context.md
+```
+
+Use `--format json` for integrations that need structured records:
+
+```text
+py -3 -m _tools.ai_knowledge retrieve `
+  topic:tutorials/physics/physics_introduction `
+  --format json
+```
+
+Topic IDs include the topic record followed by its ordered detail chunks.
+Entity IDs include class metadata and its member ID index; member and chunk IDs
+resolve directly. Related topics and class members are not expanded
+implicitly, which keeps prompts bounded and deterministic.
+
+The default output budget is 32,000 characters and can be changed with
+`--max-chars`. If the budget is exceeded, the result reports truncation and
+omitted IDs. Unknown, malformed, or mixed-snapshot IDs fail with a nonzero exit
+code by default. `--allow-missing` permits partial output, but preserves the
+errors and still returns a non-success exit code. Use `--snapshot` when a
+caller must require an exact generated snapshot.
