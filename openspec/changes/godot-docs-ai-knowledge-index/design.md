@@ -147,8 +147,9 @@ published output and must not change existing documentation build behavior.
    changing the existing Sphinx sources.
 2. Generate the first snapshot for the current 4.7 branch and validate its
    manifest, coverage, relations, and routing index.
-3. Decide whether the full chunk artifact is committed directly or published
-   as a versioned build artifact after measuring its size.
+3. The initial snapshot measures about 84 MB and is committed in full,
+   including chunks, to preserve offline use. A later repository policy can
+   package chunks separately without changing the schemas.
 4. Add refresh and validation to the repository's normal documentation-change
    workflow.
 5. To roll back, remove the generated `ai_knowledge/` output and disable the
