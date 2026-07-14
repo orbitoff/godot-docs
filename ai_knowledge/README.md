@@ -19,6 +19,10 @@ reStructuredText documentation or the generated class reference.
 Every record includes the source-relative path, source hash, and snapshot ID.
 Use those fields to verify details against the authoritative source page.
 
+`INSTRUCTIONS.md` is a copy-ready instruction template for
+Godot projects. Copy it into the project-specific instruction file used by
+your AI assistant; it is not generated from the documentation sources.
+
 ## Generation and queries
 
 Run these commands from the repository root:
