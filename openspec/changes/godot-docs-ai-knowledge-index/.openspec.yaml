@@ -1,0 +1,4 @@
+schema: spec-driven
+created: 2026-07-14
+goal: Let AI assistants identify relevant Godot topics and load compact grounded
+  specs before consulting the authoritative documentation.
