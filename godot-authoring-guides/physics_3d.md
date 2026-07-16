@@ -30,6 +30,9 @@ CollisionObject3D
 ```
 
 `RayCast3D` and `ShapeCast3D` are query nodes, not collision bodies.
+`SoftBody3D` is also separate from this hierarchy: it inherits
+`MeshInstance3D`, derives its collision and simulation from its mesh, and is
+not an ordinary `PhysicsBody3D` with a `CollisionShape3D` child.
 
 ## 2. 3D collision shape resources
 
@@ -312,8 +315,10 @@ Important properties include `total_mass`, `linear_stiffness`,
 
 Soft-body points can be pinned to nodes with point indices and attachment
 paths. The mesh topology and pinned points must be valid for the intended
-deformation. Godot recommends Jolt Physics for faster and more reliable
-soft-body behavior.
+deformation. Closed meshes are required for pressure behavior, and additional
+subdivision improves deformation detail at a simulation cost. Physics
+interpolation currently does not affect soft bodies. Godot recommends Jolt
+Physics for faster and more reliable soft-body behavior.
 
 Area wind properties can affect `SoftBody3D` when an area supplies a wind
 source, magnitude, and attenuation.
@@ -370,9 +375,11 @@ vehicle behavior, and solver results.
 
 ## 14. 3D physics backends and stability
 
-GodotPhysics is the default 3D backend in the standard configuration. Godot 4
-also supports the Jolt backend when enabled by the project. Backend-specific
-behavior must not be assumed portable without testing.
+Projects created in Godot 4.6 and later use Jolt Physics by default, while
+projects upgraded from earlier versions can retain GodotPhysics3D. Always read
+the project's `physics/3d/physics_engine` setting instead of assuming either
+backend. Backend-specific behavior must not be assumed portable without
+testing.
 
 Known sensitive cases include:
 

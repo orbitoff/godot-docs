@@ -213,9 +213,11 @@ Configure collision filtering with:
   `body_remove_collision_exception(body, other)`.
 
 Attach an application-level identity with
-`body_attach_object_instance_id(body, object_id)`. The ID is returned in area
-monitor callbacks and can be used to map a body RID back to a `Node` or manager
-object. This association does not keep the object alive.
+`body_attach_object_instance_id(body, object_id)`. The ID is returned as the
+`instance_id` argument of an area's body-monitor callback and can map a body
+RID back to a `Node` or manager object. Use
+`area_attach_object_instance_id()` for IDs returned by area-area monitor
+callbacks. These associations do not keep the objects alive.
 
 Attach optional physics-rendering identity with
 `body_attach_canvas_instance_id(body, canvas_id)`. This is metadata for the

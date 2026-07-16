@@ -36,6 +36,8 @@ Use these rules when creating a new `.gd` file:
 12. Apply the shared concepts guide's project-specific API verification rules.
 13. Keep the script's inheritance and lifecycle methods consistent with the
     node or resource it is attached to.
+14. Preserve the engine-generated `.gd.uid` sidecar in Godot 4.4 and later.
+    Commit and move it with the script; do not invent its contents.
 
 Correct parsing is not enough. A script can be syntactically valid but fail at
 runtime because an engine method, property, signal, node path, or resource does
@@ -103,22 +105,27 @@ func take_damage(amount: int) -> void:
         died.emit()
 ```
 
-The canonical order is:
+The canonical order, matching the Godot style guide, is:
 
-1. File annotations such as `@tool` and `@icon`.
+1. File/class annotations such as `@tool`, `@icon`, `@static_unload`, and
+   class-level `@abstract`.
 2. `class_name`.
 3. `extends`.
 4. File-level documentation comments.
 5. Signals.
 6. Enums.
 7. Constants.
-8. Exported member variables.
-9. Other member variables.
-10. `@onready` variables.
-11. Static variables and static functions, where used.
-12. Lifecycle and public functions.
-13. Private helper functions.
-14. Inner classes.
+8. Static variables.
+9. Exported member variables.
+10. Other member variables.
+11. `@onready` variables.
+12. `_static_init()`.
+13. Other static methods.
+14. Overridden built-in virtual methods, starting with `_init()`,
+    `_enter_tree()`, `_ready()`, `_process()`, and `_physics_process()`.
+15. Overridden custom methods.
+16. Remaining public and private methods.
+17. Inner classes.
 
 The parser does not require every style ordering rule, but consistent ordering
 helps humans and AI systems understand the class.
@@ -220,8 +227,7 @@ extends Node
 ```
 
 The name must be a valid identifier and should not collide with another global
-class. A global class whose name starts with `Editor` is hidden from some
-editor creation dialogs.
+class.
 
 ### 5.3 `@icon`
 
@@ -248,6 +254,22 @@ Tool scripts can modify editor-visible objects and resources. They must be
 written defensively because an editor crash or destructive operation can
 affect the project itself. Do not assume that runtime-only nodes, resources, or
 scene state exist while the editor is inspecting the script.
+
+### 5.5 `@static_unload`
+
+`@static_unload` is a script-level annotation intended to reset static state
+after all references to the script are lost:
+
+```gdscript
+@static_unload
+class_name CachedData
+extends RefCounted
+```
+
+It must appear before `class_name` and `extends`. In the current Godot 4.7
+documentation, a known engine bug prevents scripts from being freed even when
+this annotation is present. Do not rely on it for cleanup; clear important
+static state explicitly.
 
 ## 6. Variables
 
@@ -304,7 +326,9 @@ make tests and scene instances influence one another.
 
 Use it for node lookups and other values that depend on the scene tree. A
 normal member initializer runs before the node tree is ready and may produce a
-null result or an invalid path.
+null result or an invalid path. If a path is optional or not verified, use
+`get_node_or_null()` with a compatible nullable type and handle the missing
+node instead of relying on `$Path` or `%UniqueName`.
 
 ### 6.5 Setters and getters
 
@@ -320,8 +344,28 @@ var health: int = 100:
 ```
 
 The setter runs when the property is assigned and the getter runs when it is
-read. Avoid indirect assignments that call the same setter recursively. Keep
-validation and side effects small and explicit.
+read. Directly using the property name inside its own accessor reads or writes
+the underlying member and does not recurse:
+
+```gdscript
+var health: int = 100:
+    set(value):
+        health = clampi(value, 0, max_health)
+```
+
+That exception does not propagate through helper functions. This recurses:
+
+```gdscript
+var health: int:
+    set(value):
+        set_health(value)
+
+func set_health(value: int) -> void:
+    health = value
+```
+
+Keep validation and side effects small and explicit. Do not delegate an
+accessor to code that assigns the same property unless recursion is intended.
 
 In-editor setter/getter behavior depends on whether the script is a tool
 script. `@tool` is required when the logic must execute while editing.
@@ -1200,6 +1244,32 @@ Other documented helpers include global file/directory pickers, node-path
 exports, color alpha hints, and custom export hints. Use the annotation whose
 value type matches the property.
 
+High-value specialized exports include:
+
+```gdscript
+@export_global_file("*.png") var external_image: String
+@export_global_dir var external_directory: String
+@export_color_no_alpha var tint: Color = Color.WHITE
+@export_storage var cached_version: int
+```
+
+`@export_storage` serializes a property without displaying it in the
+Inspector. For a clickable Inspector action, export a `Callable` from a tool
+script:
+
+```gdscript
+@tool
+extends Node
+
+@export_tool_button("Rebuild", "Callable") var rebuild_action: Callable = rebuild
+
+func rebuild() -> void:
+    pass
+```
+
+The optional second `@export_tool_button` argument is an editor icon name, not
+the callable. The annotated property's value is the callable.
+
 `@export_custom` is intended for advanced Inspector hints and must use the
 exact hint arguments expected by the target Godot version.
 
@@ -1237,6 +1307,8 @@ Common annotations include:
 
 - `@tool`: execute in the editor.
 - `@icon("res://...")`: set a global script icon.
+- `@static_unload`: request static state reset after the script unloads; do not
+  rely on it while the documented unloading bug applies.
 - `@onready`: initialize after the node enters the ready phase.
 - `@export`: expose a member in the Inspector.
 - `@export_group`, `@export_subgroup`, `@export_category`: organize exports.
@@ -1280,7 +1352,7 @@ Annotation semantics:
 | `@export_flags(values...)` | Presents independent bit flags and stores the combined integer mask. |
 | `@export_color_no_alpha` | Exposes a `Color` without an editable alpha channel in the Inspector. |
 | `@export_storage` | Serializes the property without showing it in the Inspector. |
-| `@export_tool_button(label, callable, ...)` | Adds an Inspector button that invokes a callable in a tool script; it is an editor action, not a normal serialized data field. |
+| `@export_tool_button(label, icon_name = "")` | Exports a `Callable` property as an Inspector button in a tool script. The optional second argument selects a built-in editor icon. |
 | `@export_custom(...)` | Supplies low-level Inspector hint data. Its arguments must match the target Godot version's hint API exactly. |
 | `@warning_ignore(name)` | Suppresses the named warning for the annotated declaration or statement only. |
 | `@warning_ignore_start(name)` | Starts a warning-suppression region for the named warning. |
@@ -1715,6 +1787,8 @@ checklist in `shared_concepts.md` also applies.
 ### Syntax
 
 - The filename ends in `.gd`.
+- The matching `.gd.uid` is preserved for Godot 4.4+ projects after the engine
+  generates it.
 - Indentation uses tabs consistently.
 - Every block after `:` is indented.
 - Strings, arrays, dictionaries, and parentheses are balanced.

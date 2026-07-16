@@ -14,6 +14,119 @@ Read [`shared_concepts.md`](shared_concepts.md) alongside
 this entry point whenever a task crosses formats or uses shared ownership,
 timing, coordinate-space, identifier, or validation rules.
 
+## 0. AI execution contract
+
+This directory is designed to be copied into a Godot project and used as a
+standalone authoring reference. Only this guide directory, the target project,
+and the target Godot executable are assumed. Use this order of authority:
+
+1. The target Godot executable's parser, loader, compiler, and runtime behavior.
+2. These Godot 4.7 authoring guides.
+3. The target project's files, settings, tests, generated examples, and
+   established conventions.
+4. Generic model knowledge or remembered examples.
+
+For engine API facts, do not let stale project code override the target engine
+or these versioned guides. For project-specific facts, do not let a generic
+example override the project.
+
+### Optional local class reference
+
+The copied guide directory may contain locally generated files under
+`class_reference/`. This cache is optional and is commonly excluded from Git
+to keep project repositories small.
+
+Before using it, confirm that:
+
+- class `.rst` files are actually present;
+- `class_reference/VERSION` matches Godot 4.7;
+- the requested class file exists;
+- the files are not a partial or mixed-version copy.
+
+If any check fails, ignore the cache and continue with these authoring guides,
+the target project, and the target Godot executable. Missing class-reference
+files are not permission to guess an API. Search the relevant specialized
+guide and project usage, test a minimal candidate when possible, and preserve
+uncertainty when the exact member cannot be established.
+
+### Inspect before generating
+
+Before writing an artifact:
+
+1. Read `project.godot`, especially its feature tags and renderer/physics
+   settings. `config_version` alone does not identify the exact engine release.
+2. Check the project's README, CI, export configuration, and launch scripts for
+   the exact Godot version and validation commands.
+3. Search for the closest existing script, scene, resource, shader, or server
+   wrapper and preserve its conventions.
+4. Verify every custom class, autoload, input action, collision layer, node
+   path, resource path, shader parameter, renderer, and physics backend used by
+   the change.
+5. Identify whether the edited file is source-controlled authoring data,
+   engine-generated metadata, imported output, or runtime-only state.
+
+If the project does not establish a required fact, make the uncertainty
+explicit and choose a conservative, reversible default. Never fabricate a UID,
+path, API, input action, node, or project setting to make an example look
+complete.
+
+### Choose the safest authoring surface
+
+Prefer the highest-level surface that satisfies the requirement:
+
+```text
+node/resource API
+        |
+        v
+simple text scene/resource editing
+        |
+        v
+ResourceSaver/editor-generated complex serialization
+        |
+        v
+low-level PhysicsServer/RenderingServer RIDs
+```
+
+Use hand-authored `.tscn` and `.tres` for small, well-understood structures.
+Use the target Godot version to generate complex animation, mesh, tile, import,
+or packed-array structures. Use server APIs only when node/resource APIs are
+insufficient or measured node overhead justifies the added ownership burden.
+
+Do not edit files under `.godot/` as project source. Preserve imported source
+assets and change import settings rather than patching generated import output.
+For Godot 4.4 and later, scripts and shaders have engine-generated `.uid`
+sidecars. Commit them, move them with their source file, and do not invent,
+copy, or casually delete their contents.
+
+### Keep prompt context focused
+
+Do not load all guides for every task. Read this entry point, the shared guide,
+and only the specialized guides and sections required by the dependency graph.
+Search within this directory for the exact concept, class, method, annotation,
+format field, or built-in before loading another complete guide. If an
+exhaustive class member is outside the scope of these guides, inspect existing
+target-project usage or test the smallest candidate with the target Godot
+executable. If neither establishes the fact, state the uncertainty instead of
+inventing an API.
+
+### Validate behavior, not just text
+
+Use the strongest available validation:
+
+1. structural checks for references, IDs, paths, and dependency order;
+2. target-engine parse, import, load, and shader compilation;
+3. the project's existing tests or minimal runtime reproduction;
+4. behavioral checks for collisions, transforms, rendering, ownership, and
+   cleanup.
+
+When supported by the project, a headless editor start such as
+`godot --headless --path <project> --editor --quit` can expose import, parse,
+load, and shader errors. It can also execute editor plugins and `@tool` code, so
+run it in a controlled worktree and inspect all resulting changes. Use the
+project's documented command when one exists.
+
+Do not claim a file was engine-validated when it was only inspected as text.
+
 ## 1. Guide map
 
 ### File-format guides
@@ -267,14 +380,19 @@ format-, dimension-, or server-specific checklist in every guide involved.
 For a new feature, use this sequence:
 
 1. Read this entry point.
-2. Identify the primary output format.
-3. Read the primary guide completely enough to follow its compatibility rules.
-4. Read the semantic guide for every referenced subsystem.
-5. Extract project-specific facts from the repository instead of guessing.
-6. Generate the smallest valid artifact first.
+2. Inspect the project and establish the version, renderer, backend, local
+   conventions, and validation commands.
+3. Identify the primary output format and the smallest set of required guides.
+4. Retrieve exact target-version documentation for every API fact not fully
+   established by those guides.
+5. Separate verified facts from assumptions before generating.
+6. Generate the smallest valid artifact first and preserve unrelated existing
+   content and engine-managed metadata.
 7. Add optional features only after the base structure is correct.
-8. Re-read the validation checklist for every involved subsystem.
-9. Inspect the final files as a connected system, not as isolated snippets.
+8. Run the strongest available target-engine and project validation.
+9. Re-read the checklist for every involved subsystem.
+10. Inspect the final files as one dependency graph and report any validation
+    that could not be performed.
 
 The guides are complementary. The strongest result comes from combining
 serialization rules, language/API semantics, resource lifetime, scene

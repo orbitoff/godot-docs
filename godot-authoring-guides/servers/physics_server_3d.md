@@ -190,7 +190,9 @@ Configure:
   `body_remove_collision_exception()`.
 
 `body_attach_object_instance_id()` attaches an application identity returned
-by area callbacks. It is metadata, not a strong reference.
+as the `instance_id` argument of an area's body-monitor callback. Use
+`area_attach_object_instance_id()` for IDs returned by area-area monitor
+callbacks. This metadata is not a strong reference.
 
 ## 6. Body parameters and state
 

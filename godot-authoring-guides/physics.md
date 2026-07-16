@@ -42,8 +42,11 @@ shared concepts guide. Physics-specific use is:
 - reading collision results;
 - updating physics-dependent state.
 
-`delta` is elapsed physics time in seconds. Always use it for time-based
-movement or acceleration instead of assuming a fixed numeric value.
+`delta` is elapsed physics time in seconds. Use it when integrating rates such
+as acceleration into velocity or velocity into an explicit motion vector.
+Do not multiply a velocity by `delta` when an API such as `move_and_slide()`
+expects velocity in units per second; the dimension-specific guides identify
+those contracts.
 
 `_process(delta)` is render-frame timing and is not the correct place for
 physics movement or direct-space queries. Visual interpolation can make

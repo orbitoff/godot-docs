@@ -40,6 +40,8 @@ Use these rules when creating a `.gdshader`:
     `shader_type`.
 15. Check renderer limitations before using advanced samplers, passes, or
     built-ins.
+16. Preserve engine-generated `.gdshader.uid` and `.gdshaderinc.uid` sidecars
+    in Godot 4.4 and later. Commit and move them with their source files.
 
 A shader can parse correctly and still fail to compile or render correctly if
 it writes the wrong output, uses a built-in in the wrong stage, or assumes the
@@ -432,10 +434,19 @@ must match the project settings.
 
 ### 6.6 Per-instance uniforms
 
-Per-instance uniforms can be set separately on geometry instances. Use the
-documented per-instance uniform syntax and set the value on the target
-`GeometryInstance3D`. Do not assume a per-instance value exists when the
-material is used on a different node type.
+Per-instance uniforms can be set separately on `CanvasItem` nodes in 2D and
+`GeometryInstance3D` nodes in 3D:
+
+```gdshader
+instance uniform vec4 instance_tint : source_color = vec4(1.0);
+```
+
+Set them with `CanvasItem.set_instance_shader_parameter()` or
+`GeometryInstance3D.set_instance_shader_parameter()`. Per-instance uniforms do
+not support textures or arrays, and there is a practical limit of 16 per
+shader. With multiple materials, keep the uniform name, index, and type
+consistent or assign an explicit `instance_index(0)` through
+`instance_index(15)`.
 
 ### 6.7 Varyings
 
@@ -801,7 +812,6 @@ Lighting and shading:
 - `diffuse_burley`
 - `specular_schlick_ggx`
 - `specular_toon`
-- `specular_disabled`
 
 Transforms and effects:
 
@@ -1427,6 +1437,10 @@ void blit() {
 }
 ```
 
+This is a special-purpose blit pass, not a general CanvasItem material shader.
+Use it only for `DrawableTexture2D` operations and write every output slot the
+operation requires.
+
 Source textures use:
 
 - `hint_blit_source0`
@@ -1568,7 +1582,7 @@ These values are available in the shader types and stages documented below:
 
 | Built-in | Direction/type | Meaning |
 | --- | --- | --- |
-| `TIME` | `in float` | Engine time in seconds. It rolls over every 3600 seconds, is affected by `time_scale`, and is not advanced while the game is paused. |
+| `TIME` | `in float` | Engine time in seconds. It rolls over every 3600 seconds, is affected by `time_scale`, and continues advancing while the game is paused. |
 | `PI` | `in float` | Mathematical pi constant. |
 | `TAU` | `in float` | One full turn in radians, equal to `2 * PI`. |
 | `E` | `in float` | Euler's number, the base of natural logarithms. |
@@ -1681,8 +1695,9 @@ CanvasItem uses the shared constants above. Its stage-specific values are:
 
 #### CanvasItem light stage
 
-`light()` runs once per affecting light. It is skipped by `unshaded`,
-`vertex_lighting`, and the project Force Vertex Shading setting.
+`light()` runs once per affecting light. The `unshaded` render mode disables
+CanvasItem lighting. The `vertex_lighting` and Force Vertex Shading caveats
+apply to spatial shaders, not CanvasItem shaders.
 
 | Built-in | Direction/type | Meaning |
 | --- | --- | --- |
@@ -2226,12 +2241,13 @@ checklist in `shared_concepts.md` also applies.
 
 ### File and declarations
 
-- The file ends in `.gdshader`.
+- Shader source files end in `.gdshader`; include files end in
+  `.gdshaderinc`.
+- Matching `.uid` sidecars are preserved after Godot generates them.
 - The first declaration is a valid `shader_type`.
 - There is at most one `shader_type`.
 - `render_mode` contains only modes supported by that shader type.
 - Functions match the selected shader type.
-- Include files end in `.gdshaderinc`.
 
 ### Types and expressions
 

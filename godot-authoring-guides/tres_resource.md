@@ -90,7 +90,8 @@ The type in the header controls which properties are valid. Do not declare
 `type="Resource"` and then assume properties from an unrelated subclass are
 available.
 
-A custom resource normally declares `type="Resource"` and attaches a script:
+A generic script-backed custom resource can declare `type="Resource"` and
+attach a script:
 
 ```text
 [gd_resource type="Resource" format=3]
@@ -105,7 +106,10 @@ speed = 4.0
 
 The script must extend `Resource` or a compatible `Resource` subclass. Its
 exported properties must exist and their serialized values must match the
-declared property types.
+declared property types. Named script classes may produce a more specific
+`type` and a `script_class` header attribute. For a script-defined resource,
+prefer the exact header emitted by the target Godot version instead of
+guessing whether it should use `Resource` or the global class name.
 
 ## 4. File-level grammar
 
@@ -723,6 +727,8 @@ validation checklist in `shared_concepts.md` also applies.
 ### Header and paths
 
 - The declared resource `type` exists in the target engine/project.
+- `script_class`, when present on target-generated output, matches the attached
+  script and is preserved exactly.
 - The header UID is valid, unique, and belongs to this resource, or is omitted.
 - External paths use the intended `res://` location.
 - External UIDs, when included, identify the paths they accompany.
