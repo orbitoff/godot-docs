@@ -26,8 +26,10 @@ target project. Always verify project-specific facts instead of guessing:
 
 Names are not evidence that an API exists. Do not infer a property, method,
 signal, enum, callback signature, uniform, or node path from a naming pattern.
-Check the relevant class reference, existing project code, or generated
-resource output.
+When `GODOT_DOCS_ROOT` points to a version-matched Godot documentation
+checkout, check the relevant lowercase class file under
+`$GODOT_DOCS_ROOT/classes`. Otherwise, check existing project code or generated
+resource output and validate uncertain APIs with the target executable.
 
 An artifact can be syntactically valid and still fail because it refers to a
 class, path, property, signal, resource, or project setting that does not
@@ -39,6 +41,9 @@ Use different authorities for different facts:
 
 - For engine syntax and APIs covered by this guide set, prefer the target Godot
   executable and these versioned guides over project examples or model memory.
+- For exact class members, signatures, inheritance, enums, and constants, use
+  the version-matched class `.rst` files under
+  `$GODOT_DOCS_ROOT/classes` when available.
 - For project structure and conventions, prefer `project.godot`, project code,
   tests, and generated project artifacts over generic examples.
 - For exhaustive class members outside this guide set, inspect target-project
@@ -51,10 +56,11 @@ Godot engine version. If the target is not 4.7, re-check every version-sensitive
 annotation, property, method, serialization field, shader built-in, and backend
 default.
 
-The guides are standalone. Search this directory before loading unrelated
-files, and combine only the format and subsystem guides required by the task.
-When neither the guides, project, nor target engine establish a fact, preserve
-the uncertainty instead of filling the gap from memory.
+The guides remain usable without `GODOT_DOCS_ROOT`. Search this directory
+before loading unrelated files, and combine only the format and subsystem
+guides required by the task. When neither the external class reference,
+guides, project, nor target engine establish a fact, preserve the uncertainty
+instead of filling the gap from memory.
 
 ### Authoring surface and generated files
 

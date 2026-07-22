@@ -14,36 +14,74 @@ Read [`shared_concepts.md`](shared_concepts.md) alongside
 this entry point whenever a task crosses formats or uses shared ownership,
 timing, coordinate-space, identifier, or validation rules.
 
-## 0. AI execution contract
+## 0. Required startup class-reference probe (do this FIRST)
+
+Before doing anything else in this file — including reading the AI execution
+contract below, inspecting the project, or reading any other guide — perform
+the probe. This is a hard prerequisite, not a recommendation.
+
+1. Resolve `$GODOT_DOCS_ROOT/classes/class_node.rst`.
+2. Attempt an actual content read of the file header through the `Node` title
+   and `Inherits` declaration. A path existence check is not sufficient.
+3. If the read requires permission to access a path outside the project,
+   request that permission immediately instead of silently skipping the
+   reference.
+4. If the header is read successfully and identifies `Node`, record the
+   external class reference as available for the session.
+5. If the variable is unset, permission is denied, the file is missing, or the
+   content is invalid, record the reference as unavailable and use the fallback
+   rules below.
+
+`Node` is the probe because it is a foundational engine class and should exist
+in every complete Godot class-reference checkout. Read only enough of the file
+to establish access and identity; do not load the full class during the probe.
+
+Do not skip this step. Do not continue past this section until the probe has
+been performed and its result (available or unavailable) is recorded.
+
+## 1. AI execution contract
 
 This directory is designed to be copied into a Godot project and used as a
-standalone authoring reference. Only this guide directory, the target project,
-and the target Godot executable are assumed. Use this order of authority:
+standalone authoring reference. A version-matched Godot documentation checkout
+may additionally be provided through `GODOT_DOCS_ROOT`. Use this order of
+authority:
 
 1. The target Godot executable's parser, loader, compiler, and runtime behavior.
-2. These Godot 4.7 authoring guides.
-3. The target project's files, settings, tests, generated examples, and
+2. The Godot 4.7 class reference under `GODOT_DOCS_ROOT/classes` for exact
+   engine API declarations.
+3. These Godot 4.7 authoring guides.
+4. The target project's files, settings, tests, generated examples, and
    established conventions.
-4. Generic model knowledge or remembered examples.
+5. Generic model knowledge or remembered examples.
 
 For engine API facts, do not let stale project code override the target engine
 or these versioned guides. For project-specific facts, do not let a generic
 example override the project.
 
-### Optional local class reference
+### External class reference
 
-The copied guide directory may contain locally generated files under
-`class_reference/`. This cache is optional and is commonly excluded from Git
-to keep project repositories small.
+Resolve the Godot documentation checkout from the `GODOT_DOCS_ROOT`
+environment variable and read class files from its `classes/` directory.
 
 Before using it, confirm that:
 
-- class `.rst` files are actually present;
-- `class_reference/VERSION` matches Godot 4.7;
+- `GODOT_DOCS_ROOT` is set and points to a Godot documentation checkout;
+- `$GODOT_DOCS_ROOT/classes` contains class `.rst` files;
 - the requested class file exists;
 - the files are not a partial or mixed-version copy.
 
-If any check fails, ignore the cache and continue with these authoring guides,
+Class filenames are lowercase:
+
+```text
+Node                       -> $GODOT_DOCS_ROOT/classes/class_node.rst
+CharacterBody2D            -> $GODOT_DOCS_ROOT/classes/class_characterbody2d.rst
+PhysicsDirectSpaceState3D  -> $GODOT_DOCS_ROOT/classes/class_physicsdirectspacestate3d.rst
+@GDScript                  -> $GODOT_DOCS_ROOT/classes/class_@gdscript.rst
+@GlobalScope               -> $GODOT_DOCS_ROOT/classes/class_@globalscope.rst
+```
+
+Open only the requested class and the inherited parents needed to establish
+the relevant API. If any check fails, continue with these authoring guides,
 the target project, and the target Godot executable. Missing class-reference
 files are not permission to guess an API. Search the relevant specialized
 guide and project usage, test a minimal candidate when possible, and preserve
@@ -127,7 +165,7 @@ project's documented command when one exists.
 
 Do not claim a file was engine-validated when it was only inspected as text.
 
-## 1. Guide map
+## 2. Guide map
 
 ### File-format guides
 
@@ -174,7 +212,7 @@ spaces, cross-artifact dependencies, and general validation. Specialized
 guides retain only the rules that are unique to their format, dimension, or
 server.
 
-## 2. Choose the correct primary guide
+## 3. Choose the correct primary guide
 
 Start by identifying the artifact being created:
 
@@ -201,14 +239,14 @@ feature can require several guides:
 | A shader uniform configured in a material | `.gdshader` + `.tres` or GDScript material API. |
 | A generated mesh saved as a resource | `.tres` + RenderingServer concepts if the mesh is built from raw arrays. |
 
-## 3. Shared concepts and dependency graph
+## 4. Shared concepts and dependency graph
 
 Read [`shared_concepts.md`](shared_concepts.md) for the
 cross-format dependency graph and the rules shared by all authoring guides.
 
-## 4. When to read each guide in detail
+## 5. When to read each guide in detail
 
-### 4.1 Read the `.tscn` guide first when
+### 5.1 Read the `.tscn` guide first when
 
 The output is a scene file, even if the difficult part is physics, materials,
 animation, or scripting. The `.tscn` guide defines:
@@ -224,7 +262,7 @@ animation, or scripting. The `.tscn` guide defines:
 Then read the guide for the referenced resource or behavior. Do not put
 runtime logic, shader source, or arbitrary JSON inside a `.tscn`.
 
-### 4.2 Read the `.tres` guide first when
+### 5.2 Read the `.tres` guide first when
 
 The output is a reusable resource or when a scene property points to a
 resource with nested sub-resources. The `.tres` guide defines:
@@ -240,7 +278,7 @@ Read the shader guide for shader source and the physics guide for the meaning
 of physics resources. A `.tres` guide explains serialization; it does not
 replace the semantic guide for the resource's properties.
 
-### 4.3 Read the GDScript guide first when
+### 5.3 Read the GDScript guide first when
 
 The output is executable code or a scene/resource depends on a script. It
 defines:
@@ -257,7 +295,7 @@ Then read the relevant physics, shader, or server guide before calling those
 systems. GDScript syntax alone does not establish the semantics of a physics
 body or a rendering RID.
 
-### 4.4 Read the shader guide first when
+### 5.4 Read the shader guide first when
 
 The output is `.gdshader` source or a shader uniform is being configured. It
 defines:
@@ -271,7 +309,7 @@ defines:
 Then read the `.tres` guide if the shader is saved in a material resource, or
 the RenderingServer guide if the shader and material are created by RID.
 
-### 4.5 Read the physics guides first when
+### 5.5 Read the physics guides first when
 
 The feature involves collisions, movement, overlap detection, forces, rigid
 simulation, raycasts, shape casts, or physics materials. Read:
@@ -284,7 +322,7 @@ simulation, raycasts, shape casts, or physics materials. Read:
 Do not use the PhysicsServer guides as a shortcut for understanding ordinary
 `CharacterBody`, `RigidBody`, `Area`, or collision-shape node behavior.
 
-### 4.6 Read a server guide first when
+### 5.6 Read a server guide first when
 
 The code intentionally bypasses scene nodes and creates server objects with
 RIDs. Server guides are required when the code calls methods such as:
@@ -300,7 +338,7 @@ Then also read GDScript for ownership and timing, the relevant physics guide
 for simulation semantics, or the shader/resource guide for the data assigned
 to the server objects.
 
-## 5. Cross-format authoring workflows
+## 6. Cross-format authoring workflows
 
 ### Workflow A: create a scene with a script
 
@@ -363,19 +401,19 @@ Use this order:
    resource type explicitly support that serialization.
 7. Recreate runtime server state from serialized resources during initialization.
 
-## 6. Serialization versus runtime state
+## 7. Serialization versus runtime state
 
 The shared guide defines the dependency and ownership rules for separating
 `.tscn`, `.tres`, `.gd`, `.gdshader`, physics runtime state, and rendering
 runtime state. Use it before persisting or recreating server objects.
 
-## 7. End-to-end validation checklist
+## 8. End-to-end validation checklist
 
 Start with the common checklist in
 [`shared_concepts.md`](shared_concepts.md), then run the
 format-, dimension-, or server-specific checklist in every guide involved.
 
-## 8. Recommended reading order for an AI model
+## 9. Recommended reading order for an AI model
 
 For a new feature, use this sequence:
 
